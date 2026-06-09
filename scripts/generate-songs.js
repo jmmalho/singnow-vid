@@ -9,6 +9,16 @@ function exists(filePath) {
   return fs.existsSync(filePath);
 }
 
+function readJson(filePath) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (err) {
+    console.warn("⚠️ JSON inválido:", filePath);
+    console.warn(err.message);
+    return {};
+  }
+}
+
 function slugToTitle(slug) {
   return slug
     .replace(/[-_]/g, " ")
@@ -20,8 +30,10 @@ function slugToTitle(slug) {
 }
 
 function parseFolderName(folderName) {
+  // Exemplo: "ONEPACT - 100" => artist: ONEPACT, title: 100
   if (folderName.includes(" - ")) {
     const parts = folderName.split(" - ");
+
     return {
       artist: parts[0].trim(),
       title: parts.slice(1).join(" - ").trim()
@@ -52,30 +64,29 @@ function findFirst(folderPath, names) {
   return "";
 }
 
-function readJson(filePath) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf8"));
-  } catch (err) {
-    console.warn("⚠️ JSON inválido:", filePath);
-    console.warn(err.message);
-    return {};
-  }
-}
-
 function readOptionalSongJson(folderPath) {
   const songJsonPath = path.join(folderPath, "song.json");
+
   if (!exists(songJsonPath)) return {};
+
   return readJson(songJsonPath);
 }
 
-function keepNumber(value, fallback) {
+function numberOrDefault(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
-  const number = Number(value);
-  return Number.isNaN(number) ? fallback : number;
+
+  const parsed = Number(value);
+
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function buildFolderUrl(folderName) {
+  // Mantém espaços seguros em URL.
+  return "api/songs/" + encodeURIComponent(folderName).replace(/%20/g, "%20");
 }
 
 function normalizeSong(folderName, folderPath) {
-  const folderUrl = "api/songs/" + encodeURIComponent(folderName).replace(/%20/g, "%20");
+  const folderUrl = buildFolderUrl(folderName);
   const parsed = parseFolderName(folderName);
   const custom = readOptionalSongJson(folderPath);
 
@@ -84,12 +95,15 @@ function normalizeSong(folderName, folderPath) {
     "song.wav",
     "song.m4a",
     "audio.mp3",
-    "instrumental.mp3"
+    "audio.wav",
+    "instrumental.mp3",
+    "instrumental.wav"
   ]);
 
   const lyricsFile = findFirst(folderPath, [
     "lyrics.json",
-    "letra.json"
+    "letra.json",
+    "legendas.json"
   ]);
 
   const coverFile = findFirst(folderPath, [
@@ -117,26 +131,40 @@ function normalizeSong(folderName, folderPath) {
     "background.mp4",
     "bg.mp4",
     "fundo.mp4",
-    "video.mp4"
+    "video.mp4",
+    "preview.mp4"
+  ]);
+
+  const bandLogoFile = findFirst(folderPath, [
+    "band-logo.png",
+    "band-logo.jpg",
+    "artist-logo.png",
+    "artist-logo.jpg",
+    "logo.png",
+    "logo.jpg"
   ]);
 
   if (!audioFile && !custom.audio) {
-    console.warn("⚠️ Sem song.mp3/audio em:", folderName);
+    console.warn("⚠️ Sem áudio em:", folderName);
   }
 
   if (!lyricsFile && !custom.lyrics) {
     console.warn("⚠️ Sem lyrics.json em:", folderName);
   }
 
-  // Começa com TODOS os campos do song.json.
-  // Isto é o fix importante: não perde genre, releaseDate, startPreview, delay, menuPreviewWait, etc.
+  // FIX MAIS IMPORTANTE:
+  // Começa por copiar TODOS os campos do song.json.
+  // Assim NUNCA perdes campos novos:
+  // genre, releaseDate, startPreview, delay, lyricsAdjustment, bandLogo, mood, difficulty, tags, etc.
   const song = Object.assign({}, custom);
 
+  // Campos obrigatórios/base com fallback automático.
   song.id = custom.id || makeId(folderName);
   song.title = custom.title || parsed.title;
   song.artist = custom.artist || parsed.artist;
-  song.category = custom.category || "Karaoke";
+  song.category = custom.category || custom.genre || "Karaoke";
 
+  // Assets automáticos só são preenchidos se não estiverem definidos no song.json.
   song.cover =
     custom.cover ||
     (coverFile ? `${folderUrl}/${coverFile}` : "assets/covers/default-cover.jpg");
@@ -157,16 +185,31 @@ function normalizeSong(folderName, folderPath) {
     custom.lyrics ||
     (lyricsFile ? `${folderUrl}/${lyricsFile}` : "");
 
-  // Compatibilidade com nomes antigos que já usaste.
-  // Agora a app usa "delay" e "menuPreviewWait".
+  // Logotipo da banda/artista.
+  // Podes pôr no song.json como bandLogo/artistLogo/logo
+  // ou meter ficheiro logo.png/band-logo.png na pasta da música.
+  if (!song.bandLogo && !song.artistLogo && !song.logo && bandLogoFile) {
+    song.bandLogo = `${folderUrl}/${bandLogoFile}`;
+  }
+
+  // Compatibilidade com nomes antigos que usaste antes.
   if (song.delay === undefined && song.previewVideoOffset !== undefined) {
-    song.delay = keepNumber(song.previewVideoOffset, 0);
+    song.delay = numberOrDefault(song.previewVideoOffset, 0);
   }
 
   if (song.menuPreviewWait === undefined && song.previewDelay !== undefined) {
-    // Se estiver em segundos tipo 0.9, converte para ms.
-    const previewDelay = keepNumber(song.previewDelay, 900);
-    song.menuPreviewWait = previewDelay < 20 ? Math.round(previewDelay * 1000) : previewDelay;
+    const previewDelay = numberOrDefault(song.previewDelay, 900);
+
+    // Se vier tipo 0.9, assume segundos e converte para ms.
+    // Se vier 900, assume ms.
+    song.menuPreviewWait = previewDelay < 20
+      ? Math.round(previewDelay * 1000)
+      : previewDelay;
+  }
+
+  // Defaults úteis para a app.
+  if (song.startPreview === undefined && song.previewStart !== undefined) {
+    song.startPreview = song.previewStart;
   }
 
   if (song.menuPreviewWait === undefined) {
@@ -181,9 +224,9 @@ function normalizeSong(folderName, folderPath) {
     song.previewVolume = 0.45;
   }
 
-  // Campos opcionais recomendados, só ficam se existirem no song.json:
-  // genre, releaseDate, album, language, duration, explicit, difficulty, mood,
-  // startPreview, previewStart, previewVideo, previewAudio, tags, etc.
+  if (song.lyricsAdjustment === undefined) {
+    song.lyricsAdjustment = 0;
+  }
 
   return song;
 }
@@ -206,6 +249,7 @@ function generate() {
   folders.forEach(function (folderName) {
     const folderPath = path.join(SONGS_DIR, folderName);
     const song = normalizeSong(folderName, folderPath);
+
     songs.push(song);
   });
 
@@ -219,7 +263,8 @@ function generate() {
   console.log("🎵 Músicas:", songs.length);
   console.log("📄 Ficheiro:", OUTPUT_FILE);
   console.log("");
-  console.log("Campos preservados do song.json: genre, releaseDate, startPreview, delay, menuPreviewWait, previewVolume, etc.");
+  console.log("✅ Este gerador preserva TODOS os campos do song.json.");
+  console.log("Exemplos preservados: genre, releaseDate, startPreview, delay, lyricsAdjustment, bandLogo, tags, mood, difficulty...");
 }
 
 generate();
