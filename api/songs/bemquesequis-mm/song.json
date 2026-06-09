@@ -8,7 +8,7 @@
   "startPreview": 70,
   "menuPreviewWait": 900,
   "delay": 0,
-  "lyricsAdjustment": 1.5,
+  "lyricsAdjustment": 5.0,
   "previewVolume": 0.45,
   "cover": "https://cdn-images.dzcdn.net/images/cover/7c094e1c400965fe7863120df30656d0/0x1900-000000-80-0-0.jpg",
   "backgroundImage": "https://i.ytimg.com/vi/Qi07O6mFF_Y/maxresdefault.jpg",
