@@ -96,7 +96,7 @@ def baixar_e_converter_mp3(video_id, nome_saida="song.mp3"):
 
 if __name__ == "__main__":
     # Mete aqui o ID do YouTube
-    video_id = "0J1hIERZ1yA"
+    video_id = "u_dOfihl2s0"
 
     # Nome final do ficheiro
     baixar_e_converter_mp3(video_id, "vagabundo.mp3")

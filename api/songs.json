@@ -18,6 +18,24 @@
     "lyrics": "api/songs/onepact-100/lyrics.json"
   },
   {
+    "id": "bemquesequis-mm",
+    "title": "Bem Que Se Quis",
+    "artist": "Marisa Monte",
+    "category": "Bolero",
+    "genre": "Bolero",
+    "releaseDate": "1989-01-18",
+    "startPreview": 75,
+    "menuPreviewWait": 900,
+    "delay": 0,
+    "lyricsAdjustment": -1,
+    "previewVolume": 0.45,
+    "cover": "https://cdn-images.dzcdn.net/images/cover/7c094e1c400965fe7863120df30656d0/0x1900-000000-80-0-0.jpg",
+    "backgroundImage": "https://i0.wp.com/plus.cusica.com/wp-content/uploads/2023/05/sebastian-yatra.jpg?fit=1440%2C954&ssl=1",
+    "backgroundVideo": "https://singnow-video-proxy.joao-miguel-alho22.workers.dev/?url=https%3A%2F%2Fgithub.com%2Fjmmalho%2Fsingnow-vid%2Freleases%2Fdownload%2Fvideos%2Fbemquesequis.mp4",
+    "audio": "api/songs/bemquesequis-mm/song.mp3",
+    "lyrics": "api/songs/bemquesequis-mm/lyrics.json"
+  },
+  {
     "id": "vagabudo-sy",
     "title": "Vagabundo",
     "artist": "Sebastian Yatra, Manuel Turizo, Beéle",
