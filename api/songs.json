@@ -30,7 +30,7 @@
     "cover": "https://cdn-images.dzcdn.net/images/cover/7c094e1c400965fe7863120df30656d0/0x1900-000000-80-0-0.jpg",
     "backgroundImage": "https://i0.wp.com/plus.cusica.com/wp-content/uploads/2023/05/sebastian-yatra.jpg?fit=1440%2C954&ssl=1",
     "backgroundVideo": "https://singnow-video-proxy.joao-miguel-alho22.workers.dev/?url=https%3A%2F%2Fgithub.com%2Fjmmalho%2Fsingnow-vid%2Freleases%2Fdownload%2Fvideos%2Fvagabundomv.mp4",
-    "audio": "api/songs/onepact-100/song.mp3",
-    "lyrics": "api/songs/onepact-100/lyrics.json"
+    "audio": "api/songs/vagabundo/song.mp3",
+    "lyrics": "api/songs/vagabundo/lyrics.json"
   }
 ]
